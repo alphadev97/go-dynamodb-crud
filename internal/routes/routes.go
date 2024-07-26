@@ -1,5 +1,13 @@
 package routes
 
+import (
+	HealthHandler "github.com/alphadev97/go-dynamodb-crud/internal/handlers/health"
+	ProductHandler "github.com/alphadev97/go-dynamodb-crud/internal/handlers/product"
+	"github.com/alphadev97/go-dynamodb-crud/internal/repository/adapter"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+)
+
 type Router struct {
 	config *Config
 	router *chi.Mux
@@ -12,20 +20,73 @@ func NewRouter() *Router {
 	}
 }
 
-func (r *Router) SetRouters() *chi.Mux
+func (r *Router) SetRouters(repository adapter.Interface) *chi.Mux {
+	r.setConfigsRouters()
+	r.RouterHealth(repository)
+	r.RouterProduct(repository)
 
-func (r *Router) setConfigRouters()
+	return r.router
+}
 
-func RouterHealth()
+func (r *Router) setConfigsRouters() {
+	r.EnableCORS()
+	r.EnableLogger()
+	r.EnableTimeout()
+	r.EnableRecover()
+	r.EnableRequestID()
+	r.EnableRealIP()
+}
 
-func RouterProduct()
+func (r *Router) RouterHealth(repository adapter.Interface) {
+	handler := HealthHandler.NewHandler(repository)
 
-func EnableTimeout()
+	r.router.Route("/health", func(route chi.Router) {
+		route.Post("/", handler.Post)
+		route.Get("/", handler.Get)
+		route.Put("/", handler.Put)
+		route.Delete("/", handler.Delete)
+		route.Options("/", handler.Options)
+	})
+}
 
-func EnableCORS()
+func (r *Router) RouterProduct(repository adapter.Interface) {
+	handler := ProductHandler.NewHandler(repository)
 
-func EnableRecovery()
+	r.router.Route("/product", func(route chi.Router) {
+		router.Post("/", handler.Post)
+		router.Get("/", handler.Get)
+		router.Put("/{ID}", handler.Put)
+		router.Delete("/{ID}", handler.Delete)
+		router.Options("/", handler.Options)
+	})
+}
 
-func EnableRequestID()
+func (r *Router) EnableLogger() *Router {
+	r.router.Use(middleware.Logger)
+	return r
+}
 
-func EnableRealIP()
+func (r *Router) EnableTimeout() *Router {
+	r.router.USe(middleware.Timeout(r.config.GetTimeout()))
+	return r
+}
+
+func (r *Router) EnableCORS() *Router {
+	r.router.Use(r.config.Cors)
+	return r
+}
+
+func (r *Router) EnableRecover() *Router {
+	r.router.Use(middleware.Recoverer)
+	return r
+}
+
+func (r *Router) EnableRequestID() *Router {
+	r.router.Use(middleware.RequestID)
+	return r
+}
+
+func (r *Router) EnableRealIP() *Router {
+	r.router.Use(middleware.RealIP)
+	return r
+}
