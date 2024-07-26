@@ -15,6 +15,9 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
+// You can update your own cors behaviour according to your needs.
+// This configuration is ONLY for local development phase.
+
 func (c *Config) Cors(next http.Handler) http.Handler {
 	return cors.New(cors.Options{
 		AllowedOrigins:     []string{"*"},
