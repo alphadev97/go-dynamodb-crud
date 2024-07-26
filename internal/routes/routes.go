@@ -53,11 +53,11 @@ func (r *Router) RouterProduct(repository adapter.Interface) {
 	handler := ProductHandler.NewHandler(repository)
 
 	r.router.Route("/product", func(route chi.Router) {
-		router.Post("/", handler.Post)
-		router.Get("/", handler.Get)
-		router.Put("/{ID}", handler.Put)
-		router.Delete("/{ID}", handler.Delete)
-		router.Options("/", handler.Options)
+		route.Post("/", handler.Post)
+		route.Get("/", handler.Get)
+		route.Put("/{ID}", handler.Put)
+		route.Delete("/{ID}", handler.Delete)
+		route.Options("/", handler.Options)
 	})
 }
 
