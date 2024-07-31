@@ -3,12 +3,19 @@ package product
 import (
 	"errors"
 	"net/http"
+	"time"
 
+	"github.com/go-chi/chi"
+	"github.com/google/uuid"
+
+	"github.com/alphadev97/go-dynamodb-crud/controllers/product"
+	EntityProduct "github.com/alphadev97/go-dynamodb-crud/internal/entities/product"
 	"github.com/alphadev97/go-dynamodb-crud/internal/handlers"
 	"github.com/alphadev97/go-dynamodb-crud/internal/handlers/product"
 	"github.com/alphadev97/go-dynamodb-crud/internal/repository/adapter"
-	"github.com/go-chi/chi"
-	"github.com/google/uuid"
+	Rules "github.com/alphadev97/go-dynamodb-crud/internal/rules"
+	RulesProduct "github.com/alphadev97/go-dynamodb-crud/internal/rules/product"
+	HttpStatus "github.com/alphadev97/go-dynamodb-crud/utils/http"
 )
 
 type Handler struct {
@@ -76,10 +83,72 @@ func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
 	HttpStatus.StatusOK(w, r, map[string]interface{}{"id": ID.String()})
 }
 
-func Put()
+func (h *Handler) Put(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		HttpStatus.StatusBadRequest(w, r, errors.New("ID is not uuid valid"))
+		return
+	}
 
-func Delete()
+	productBody, err := h.getBodyAndValidate(r, ID)
+	if err != nil {
+		HttpStatus.StatusBadRequest(w, r, err)
+		return
+	}
 
-func Options()
+	if err := h.Controller.Update(ID, productBody); err != nil {
+		HttpStatus.StatusInternalServerError(w, r, err)
+		return
+	}
 
-func (h *Handler) getBodyAndValidate() {}
+	HttpStatus.StatusNoContent(w, r)
+}
+
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	ID, err := uuid.Parse(chi.URLParam(r, "ID"))
+	if err != nil {
+		HttpStatus.StatusBadRequest(w, r, errors.New("ID is not uuid valid"))
+		return
+	}
+
+	if err := h.Controller.Remove(ID); err != nil {
+		HttpStatus.StatusInternalServerError(w, r, err)
+		return
+	}
+
+	HttpStatus.StatusNoContent(w, r)
+}
+
+func (h *Handler) Options(w http.ResponseWriter, r *http.Request) {
+	HttpStatus.StatusNoContent(w, r)
+}
+
+func (h *Handler) getBodyAndValidate(r *http.Request, ID uuid.UUID) (*EntityProduct.Product, error) {
+
+	productBody := &EntityProduct.Product{}
+	body, err := h.Rules.ConvertIoReaderToStruct(r.Body, productBody)
+	if err != nil {
+
+		return &EntityProduct.Product{}, errors.New("body is required")
+
+	}
+
+	productParsed, err := EntityProduct.InterfaceToModel(body)
+	if err != nil {
+		return &EntityProduct.Product{}, errors.New("error on converting body to model")
+	}
+
+	setDefaultValues(productParsed, ID)
+	return productParsed, h.Rules.Validate(productParsed)
+}
+
+func setDefaultValues(product *EntityProduct.Product, ID uuid.UUID) {
+	product.UpdatedAt = time.Now()
+
+	if ID == uuid.Nil {
+		product.ID = uuid.New()
+		product.CreatedAt = time.Now()
+	} else {
+		product.ID = ID
+	}
+}

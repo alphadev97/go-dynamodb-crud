@@ -41,7 +41,7 @@ func StatusOK(w http.ResponseWriter, r *http.Request, data interface{}) {
 }
 
 // 204
-func SatatusNoContent(w http.ResponseWriter, r *http.Request) {
+func StatusNoContent(w http.ResponseWriter, r *http.Request) {
 	newResponse(nil, http.StatusNoContent).sendResponse(w, r)
 }
 
