@@ -28,8 +28,18 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	HttpStatus.StatusOK(w, r, "Service OK")
 }
 
-func Post()
+func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
+	HttpStatus.StatusMethodNotAllowed(w, r)
+}
 
-func Put()
+func (h *Handler) Put(w http.ResponseWriter, r *http.Request) {
+	HttpStatus.StatusMethodNotAllowed(w, r)
+}
 
-func Delete()
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	HttpStatus.StatusMethodNotAllowed(w, r)
+}
+
+func (h *Handler) Options(w http.ResponseWriter, r *http.Request) {
+	HttpStatus.StatusNoContent(w, r)
+}
