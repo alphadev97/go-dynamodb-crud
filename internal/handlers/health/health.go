@@ -6,6 +6,7 @@ import (
 
 	"github.com/alphadev97/go-dynamodb-crud/internal/handlers"
 	"github.com/alphadev97/go-dynamodb-crud/internal/repository/adapter"
+	HttpStatus "github.com/alphadev97/go-dynamodb-crud/utils/http"
 )
 
 type Handler struct {
@@ -21,7 +22,7 @@ func NewHandler(respository adapter.Interface) handlers.Interface {
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	if !h.Respository.Health() {
-		HttpStatus.StatusIntervalServerError(w, r, errors.New("Relational database not alive"))
+		HttpStatus.StatusInternalServerError(w, r, errors.New("Relational database not alive"))
 		return
 	}
 

@@ -1,7 +1,8 @@
 package product
 
 import (
-	product "github.com/alphadev97/go-dynamodb-crud/internal/controllers"
+	"time"
+
 	"github.com/alphadev97/go-dynamodb-crud/internal/entities/product"
 	"github.com/alphadev97/go-dynamodb-crud/internal/repository/adapter"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
@@ -25,16 +26,12 @@ func NewController(repository adapter.Interface) Interface {
 }
 
 func (c *Controller) ListOne(id uuid.UUID) (entity product.Product, err error) {
-
 	entity.ID = id
 	response, err := c.repository.FindOne(entity.GetFilterId(), entity.TableName())
-
 	if err != nil {
 		return entity, err
 	}
-
-	return product.ParseDynamoAttributeToStruct(response.Item)
-
+	return product.ParseDynamoAtributeToStruct(response.Item)
 }
 
 func (c *Controller) ListAll() (entities []product.Product, err error) {
@@ -43,25 +40,21 @@ func (c *Controller) ListAll() (entities []product.Product, err error) {
 
 	filter := expression.Name("name").NotEqual(expression.Value(""))
 	condition, err := expression.NewBuilder().WithFilter(filter).Build()
-
 	if err != nil {
 		return entities, err
 	}
 
 	response, err := c.repository.FindAll(condition, entity.TableName())
-
 	if err != nil {
 		return entities, err
 	}
 
-
 	if response != nil {
-		for _, value : range response.Items {
-			entity, err := product.ParseDynamoAttributeToStruct()
+		for _, value := range response.Items {
+			entity, err := product.ParseDynamoAtributeToStruct(value)
 			if err != nil {
 				return entities, err
 			}
-
 			entities = append(entities, entity)
 		}
 	}
@@ -69,33 +62,29 @@ func (c *Controller) ListAll() (entities []product.Product, err error) {
 	return entities, nil
 }
 
-func (c *Controller) Create(entity *product.Product) (uuid.UUID, error){
+func (c *Controller) Create(entity *product.Product) (uuid.UUID, error) {
 	entity.CreatedAt = time.Now()
-	c.repository.CreateOrUpdate(entity.GetMap(), entity.TableName())
+	_, err := c.repository.CreateOrUpdate(entity.GetMap(), entity.TableName())
 	return entity.ID, err
 }
 
-func (c *Controller) Update(id uuid.UUID, entity *product.Product) {
+func (c *Controller) Update(id uuid.UUID, entity *product.Product) error {
 	found, err := c.ListOne(id)
 	if err != nil {
 		return err
-	} 
-
+	}
 	found.ID = id
 	found.Name = entity.Name
 	found.UpdatedAt = time.Now()
-
 	_, err = c.repository.CreateOrUpdate(found.GetMap(), entity.TableName())
 	return err
 }
 
-func (c *Controller) Remove(id uuid.UUID) error{
+func (c *Controller) Remove(id uuid.UUID) error {
 	entity, err := c.ListOne(id)
 	if err != nil {
 		return err
 	}
-
 	_, err = c.repository.Delete(entity.GetFilterId(), entity.TableName())
-
 	return err
 }

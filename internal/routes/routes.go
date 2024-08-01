@@ -1,6 +1,7 @@
 package routes
 
 import (
+	ServerConfig "github.com/alphadev97/go-dynamodb-crud/config"
 	HealthHandler "github.com/alphadev97/go-dynamodb-crud/internal/handlers/health"
 	ProductHandler "github.com/alphadev97/go-dynamodb-crud/internal/handlers/product"
 	"github.com/alphadev97/go-dynamodb-crud/internal/repository/adapter"
@@ -15,13 +16,14 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{
-		config: NewConfig().SetTimeout(serviceConfig.GetConfig().Timeout),
+		config: NewConfig().SetTimeout(ServerConfig.GetConfig().Timeout),
 		router: chi.NewRouter(),
 	}
 }
 
 func (r *Router) SetRouters(repository adapter.Interface) *chi.Mux {
 	r.setConfigsRouters()
+
 	r.RouterHealth(repository)
 	r.RouterProduct(repository)
 
@@ -55,6 +57,7 @@ func (r *Router) RouterProduct(repository adapter.Interface) {
 	r.router.Route("/product", func(route chi.Router) {
 		route.Post("/", handler.Post)
 		route.Get("/", handler.Get)
+		route.Get("/{ID}", handler.Get)
 		route.Put("/{ID}", handler.Put)
 		route.Delete("/{ID}", handler.Delete)
 		route.Options("/", handler.Options)
@@ -67,7 +70,7 @@ func (r *Router) EnableLogger() *Router {
 }
 
 func (r *Router) EnableTimeout() *Router {
-	r.router.USe(middleware.Timeout(r.config.GetTimeout()))
+	r.router.Use(middleware.Timeout(r.config.GetTimeout()))
 	return r
 }
 
