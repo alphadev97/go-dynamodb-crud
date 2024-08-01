@@ -69,8 +69,33 @@ func (c *Controller) ListAll() (entities []product.Product, err error) {
 	return entities, nil
 }
 
-func (c *Controller) Create(entity *product.Product) (uuid.UUID, error)
+func (c *Controller) Create(entity *product.Product) (uuid.UUID, error){
+	entity.CreatedAt = time.Now()
+	c.repository.CreateOrUpdate(entity.GetMap(), entity.TableName())
+	return entity.ID, err
+}
 
-func (c *Controller) Update(id uuid.UUID, entity *product.Product)
+func (c *Controller) Update(id uuid.UUID, entity *product.Product) {
+	found, err := c.ListOne(id)
+	if err != nil {
+		return err
+	} 
 
-func (c *Controller) Remove(id uuid.UUID) error
+	found.ID = id
+	found.Name = entity.Name
+	found.UpdatedAt = time.Now()
+
+	_, err = c.repository.CreateOrUpdate(found.GetMap(), entity.TableName())
+	return err
+}
+
+func (c *Controller) Remove(id uuid.UUID) error{
+	entity, err := c.ListOne(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.repository.Delete(entity.GetFilterId(), entity.TableName())
+
+	return err
+}
